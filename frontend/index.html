@@ -43,17 +43,13 @@
     }
 
   #confidence-bar {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #4caf50, #81c784);
-    animation: pulse 1.5s infinite;
-  }
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4caf50, #81c784);
+  transition: width 0.1s linear;
+}
 
-  @keyframes pulse {
-    0% { width: 10%; }
-    50% { width: 90%; }
-    100% { width: 10%; }
-  }
+
 
 </style>
 </head>
@@ -78,25 +74,24 @@
 
 
 <script>
-let isPlaying = false;  
-let mediaRecorder;
+let audioContext = null;
+let analyser = null;
+let micSource = null;
+let volumeAnimationId = null;
+
+let isPlaying = false;
+let mediaRecorder = null;
 let audioChunks = [];
-let recognition;
+let recognition = null;
+
 const img = document.getElementById("signImage");
-if (!("MediaRecorder" in window)) {
-  alert("MediaRecorder not supported in this browser");
-}
 
-if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
-  console.warn("SpeechRecognition not supported – live captions disabled");
-}
-
-/* delay helper */
+/* ---------- Helpers ---------- */
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/* UI helpers */
+/* ---------- UI ---------- */
 function showListeningUI() {
   document.getElementById("status").innerText = "🎤 Listening...";
   document.getElementById("status").style.color = "green";
@@ -114,23 +109,71 @@ function stopUI() {
   document.getElementById("confidence-container").style.display = "none";
 }
 
-/* START RECORDING */
+/* ---------- Volume Meter ---------- */
+function startVolumeMeter(stream) {
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+  // 🔴 CRITICAL FIX
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+  }
+
+  analyser = audioContext.createAnalyser();
+  analyser.fftSize = 256;
+
+  micSource = audioContext.createMediaStreamSource(stream);
+  micSource.connect(analyser);
+
+  const dataArray = new Uint8Array(analyser.frequencyBinCount);
+  const bar = document.getElementById("confidence-bar");
+
+  function updateVolume() {
+    analyser.getByteFrequencyData(dataArray);
+
+    let sum = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      sum += dataArray[i];
+    }
+
+    const avg = sum / dataArray.length;
+    bar.style.width = Math.min(100, avg * 1.2) + "%";
+
+    volumeAnimationId = requestAnimationFrame(updateVolume);
+  }
+
+  updateVolume();
+}
+
+function stopVolumeMeter() {
+  if (volumeAnimationId) cancelAnimationFrame(volumeAnimationId);
+  volumeAnimationId = null;
+
+  if (audioContext) {
+    audioContext.close();
+    audioContext = null;
+  }
+}
+
+/* ---------- START RECORDING ---------- */
 async function startRecording() {
   showListeningUI();
   audioChunks = [];
 
-  // ---- Browser streaming ASR (LIVE TEXT, optional) ----
+  // Browser ASR (optional)
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  recognition = new SpeechRecognition();
-  recognition.lang = "en-US";
-  recognition.interimResults = true;
-  recognition.continuous = true;
-  recognition.start();
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = true;
+    recognition.continuous = true;
+    recognition.start();
+  }
 
-  // ---- Audio recording for Whisper ----
+  // Mic stream
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  startVolumeMeter(stream);
 
   mediaRecorder = new MediaRecorder(stream, {
     mimeType: "audio/webm;codecs=opus"
@@ -143,35 +186,45 @@ async function startRecording() {
   mediaRecorder.start();
 }
 
-/* STOP RECORDING */
+/* ---------- STOP RECORDING ---------- */
 async function stopRecording() {
-  recognition.stop();
-  mediaRecorder.stop();
+  if (recognition) recognition.stop();
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+  }
+
+  stopVolumeMeter();
   showProcessingUI();
 
   mediaRecorder.onstop = async () => {
-    const audioBlob = new Blob(audioChunks, {
-      type: "audio/webm;codecs=opus"
-    });
+    try {
+      const audioBlob = new Blob(audioChunks, {
+        type: "audio/webm;codecs=opus"
+      });
 
-    const formData = new FormData();
-    formData.append("file", audioBlob);
+      const formData = new FormData();
+      formData.append("file", audioBlob);
 
-    const response = await fetch("http://127.0.0.1:8000/translate", {
-      method: "POST",
-      body: formData
-    });
+      const response = await fetch("http://127.0.0.1:8000/translate", {
+        method: "POST",
+        body: formData
+      });
 
-    const data = await response.json();
-    playSequence(data.sequence);
-    stopUI();
+      if (!response.ok) throw new Error("Backend error");
+
+      const data = await response.json();
+      playSequence(data.sequence);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      stopUI();
+    }
   };
 }
 
-/* PLAY ISL IMAGES */
+/* ---------- PLAY ISL IMAGES ---------- */
 async function playSequence(sequence) {
-  if (!sequence || sequence.length === 0) return;
-  if (isPlaying) return;   // 🔒 prevent restart
+  if (!sequence || sequence.length === 0 || isPlaying) return;
 
   isPlaying = true;
 
@@ -182,8 +235,8 @@ async function playSequence(sequence) {
 
   isPlaying = false;
 }
-
 </script>
+
 
 
 
