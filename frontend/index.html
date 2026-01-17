@@ -42,14 +42,42 @@
       display: none;
     }
 
-  #confidence-bar {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #4caf50, #81c784);
-  transition: width 0.1s linear;
-}
+    #confidence-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4caf50, #81c784);
+      transition: width 0.1s linear;
+    }
 
+    #isl-strip-container {
+    margin: 20px auto;
+    width: 90%;
+    overflow-x: auto;
+    white-space: nowrap;
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
 
+  #isl-strip {
+    display: flex;
+    gap: 12px;
+  }
+
+  .isl-thumb {
+    width: 90px;
+    height: auto;
+    border-radius: 6px;
+    opacity: 0.4;
+    transition: all 0.3s ease;
+  }
+
+  .isl-thumb.active {
+    opacity: 1;
+    transform: scale(1.1);
+    border: 3px solid #4caf50;
+  }
 
 </style>
 </head>
@@ -59,10 +87,15 @@
 <div id="controls">
   <p><b>Hearing User Page</b></p>
 </div>
-
+<!--ISL Image-->
 <div id="viewer">
   <img id="signImage" src="" alt="ISL Sign">
 </div>
+<!-- ISL Auto-scroll strip -->
+<div id="isl-strip-container">
+  <div id="isl-strip"></div>
+</div>
+
 <button onclick="startRecording()">🎙 Start</button>
 <button onclick="stopRecording()">⏹ Stop</button>
 <div id="status" style="margin-top:15px; font-weight:bold; color:green;">
@@ -90,6 +123,7 @@
 
 
 <script>
+const islStrip = document.getElementById("isl-strip");
 let audioContext = null;
 let analyser = null;
 let micSource = null;
@@ -239,12 +273,41 @@ async function stopRecording() {
 async function playSequence(sequence) {
   if (!sequence || isPlaying) return;
   isPlaying = true;
-  for (const sign of sequence) {
+
+  // Clear previous strip
+  islStrip.innerHTML = "";
+
+  // Create thumbnails
+  sequence.forEach(sign => {
+    const img = document.createElement("img");
     img.src = `assets/${sign}.png`;
+    img.className = "isl-thumb";
+    islStrip.appendChild(img);
+  });
+
+  const thumbs = document.querySelectorAll(".isl-thumb");
+
+  for (let i = 0; i < sequence.length; i++) {
+    // Main large image
+    img.src = `assets/${sequence[i]}.png`;
+
+    // Highlight current thumb
+    thumbs.forEach(t => t.classList.remove("active"));
+    thumbs[i].classList.add("active");
+
+    // Auto-scroll to current thumb
+    thumbs[i].scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest"
+    });
+
     await wait(1000);
   }
+
   isPlaying = false;
 }
+
 </script>
 
 </body>
