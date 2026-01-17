@@ -61,7 +61,7 @@ async def translate(file: UploadFile = File(...)):
         tmp_path = tmp.name
 
     try:
-        result = whisper_model.transcribe(tmp_path)
+        result = whisper_model.transcribe(tmp_path, task="translate")
         raw_text = result["text"]
         clean = clean_text(raw_text)
 
