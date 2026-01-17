@@ -4,6 +4,7 @@ import spacy
 import re
 import tempfile
 import os
+last_text = ""
 
 app = FastAPI()
 
@@ -22,15 +23,28 @@ whisper_model = whisper.load_model("base")
 nlp = spacy.load("en_core_web_sm")
 
 SIGN_DICT = {
-    "me": "ME",
-    "doctor": "DOCTOR",
-    "hospital": "HOSPITAL",
-    "help": "HELP",
-    "water": "WATER",
-    "police": "POLICE",
-    "meet": "MEET",
-    "need": "NEED",
-    "thank": "THANK_YOU"
+    "me": "me",
+    "you":"you",
+    "your":"you",
+    "doctor": "doctor",
+    "hospital": "hospital",
+    "help": "help",
+    "water": "water",
+    "meet": "meet",
+    "need": "need",
+    "thank": "thankyou",
+    "right": "right",
+    "left":"left",
+    "stop":"stop",
+    "go":"go",
+    "bus":"bus",
+    "train":"train",
+    "food":"food",
+    "home":"home",
+    "lawyer":"lawyer",
+    "toilet":"toilet",
+    "washroom":"toilet",
+    "house":"home"
 }
 
 IMPORTANT_WORDS = set(SIGN_DICT.keys())
@@ -49,8 +63,8 @@ async def translate(file: UploadFile = File(...)):
     try:
         result = whisper_model.transcribe(tmp_path)
         raw_text = result["text"]
-
         clean = clean_text(raw_text)
+
 
         keywords = []
         if "i" in clean or "me" in clean:
@@ -58,8 +72,10 @@ async def translate(file: UploadFile = File(...)):
 
         doc = nlp(clean)
         for token in doc:
-            if token.text in IMPORTANT_WORDS and token.text not in keywords:
-                keywords.append(token.text)
+            lemma = token.lemma_
+            if lemma in IMPORTANT_WORDS and lemma not in keywords:
+                keywords.append(lemma)
+
 
         return {
             "raw_text": raw_text,

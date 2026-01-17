@@ -32,58 +32,159 @@
       height: auto;
       border-radius: 8px;
     }
-  </style>
+    #confidence-container {
+      width: 300px;
+      height: 12px;
+      background: #ddd;
+      border-radius: 6px;
+      margin: 10px auto;
+      overflow: hidden;
+      display: none;
+    }
+
+  #confidence-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #4caf50, #81c784);
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0% { width: 10%; }
+    50% { width: 90%; }
+    100% { width: 10%; }
+  }
+
+</style>
 </head>
 
 <body>
 
 <div id="controls">
   <p><b>Hearing User Page</b></p>
-  <input type="file" id="audioInput" accept="audio/*">
-  <button onclick="sendAudio()">Translate & Play</button>
 </div>
 
 <div id="viewer">
   <img id="signImage" src="" alt="ISL Sign">
 </div>
+<button onclick="startRecording()">🎙 Start</button>
+<button onclick="stopRecording()">⏹ Stop</button>
+<div id="status" style="margin-top:15px; font-weight:bold; color:green;">
+  Idle
+</div>
+<div id="confidence-container">
+  <div id="confidence-bar"></div>
+</div>
+
 
 <script>
+let isPlaying = false;  
+let mediaRecorder;
+let audioChunks = [];
+let recognition;
+const img = document.getElementById("signImage");
+if (!("MediaRecorder" in window)) {
+  alert("MediaRecorder not supported in this browser");
+}
+
+if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
+  console.warn("SpeechRecognition not supported – live captions disabled");
+}
+
+/* delay helper */
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function sendAudio() {
-  const fileInput = document.getElementById("audioInput");
-  const file = fileInput.files[0];
-
-  if (!file) {
-    alert("Please select an audio file");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("file", file); // MUST be "file"
-
-  const response = await fetch("http://127.0.0.1:8000/translate", {
-    method: "POST",
-    body: formData
-  });
-
-  const data = await response.json();
-  console.log(data);
-
-  playSequence(data.sequence); // ✅ FIXED
+/* UI helpers */
+function showListeningUI() {
+  document.getElementById("status").innerText = "🎤 Listening...";
+  document.getElementById("status").style.color = "green";
+  document.getElementById("confidence-container").style.display = "block";
 }
 
+function showProcessingUI() {
+  document.getElementById("status").innerText = "⏳ Processing...";
+  document.getElementById("status").style.color = "orange";
+}
+
+function stopUI() {
+  document.getElementById("status").innerText = "✅ Done";
+  document.getElementById("status").style.color = "green";
+  document.getElementById("confidence-container").style.display = "none";
+}
+
+/* START RECORDING */
+async function startRecording() {
+  showListeningUI();
+  audioChunks = [];
+
+  // ---- Browser streaming ASR (LIVE TEXT, optional) ----
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = true;
+  recognition.continuous = true;
+  recognition.start();
+
+  // ---- Audio recording for Whisper ----
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+  mediaRecorder = new MediaRecorder(stream, {
+    mimeType: "audio/webm;codecs=opus"
+  });
+
+  mediaRecorder.ondataavailable = e => {
+    if (e.data.size > 0) audioChunks.push(e.data);
+  };
+
+  mediaRecorder.start();
+}
+
+/* STOP RECORDING */
+async function stopRecording() {
+  recognition.stop();
+  mediaRecorder.stop();
+  showProcessingUI();
+
+  mediaRecorder.onstop = async () => {
+    const audioBlob = new Blob(audioChunks, {
+      type: "audio/webm;codecs=opus"
+    });
+
+    const formData = new FormData();
+    formData.append("file", audioBlob);
+
+    const response = await fetch("http://127.0.0.1:8000/translate", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+    playSequence(data.sequence);
+    stopUI();
+  };
+}
+
+/* PLAY ISL IMAGES */
 async function playSequence(sequence) {
-  const img = document.getElementById("signImage");
+  if (!sequence || sequence.length === 0) return;
+  if (isPlaying) return;   // 🔒 prevent restart
+
+  isPlaying = true;
 
   for (const sign of sequence) {
     img.src = `assets/${sign}.png`;
-    await wait(1200);
+    await wait(1000);
   }
+
+  isPlaying = false;
 }
+
 </script>
+
 
 
 </body>
