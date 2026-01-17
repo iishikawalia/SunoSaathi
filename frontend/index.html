@@ -68,6 +68,22 @@
 <div id="status" style="margin-top:15px; font-weight:bold; color:green;">
   Idle
 </div>
+<div id="live-captions" style="
+  margin-top: 12px;
+  padding: 10px;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+  background: #ffffff;
+  border-radius: 6px;
+  min-height: 40px;
+  font-size: 18px;
+  color: #333;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+">
+  <i>Live captions will appear here...</i>
+</div>
+
 <div id="confidence-container">
   <div id="confidence-bar"></div>
 </div>
@@ -85,6 +101,7 @@ let audioChunks = [];
 let recognition = null;
 
 const img = document.getElementById("signImage");
+const captionsBox = document.getElementById("live-captions");
 
 /* ---------- Helpers ---------- */
 function wait(ms) {
@@ -96,6 +113,7 @@ function showListeningUI() {
   document.getElementById("status").innerText = "🎤 Listening...";
   document.getElementById("status").style.color = "green";
   document.getElementById("confidence-container").style.display = "block";
+  captionsBox.innerHTML = "<i>Listening...</i>";
 }
 
 function showProcessingUI() {
@@ -112,11 +130,7 @@ function stopUI() {
 /* ---------- Volume Meter ---------- */
 function startVolumeMeter(stream) {
   audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-  // 🔴 CRITICAL FIX
-  if (audioContext.state === "suspended") {
-    audioContext.resume();
-  }
+  audioContext.resume();
 
   analyser = audioContext.createAnalyser();
   analyser.fftSize = 256;
@@ -129,29 +143,17 @@ function startVolumeMeter(stream) {
 
   function updateVolume() {
     analyser.getByteFrequencyData(dataArray);
-
     let sum = 0;
-    for (let i = 0; i < dataArray.length; i++) {
-      sum += dataArray[i];
-    }
-
-    const avg = sum / dataArray.length;
-    bar.style.width = Math.min(100, avg * 1.2) + "%";
-
+    for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+    bar.style.width = Math.min(100, (sum / dataArray.length) * 1.2) + "%";
     volumeAnimationId = requestAnimationFrame(updateVolume);
   }
-
   updateVolume();
 }
 
 function stopVolumeMeter() {
   if (volumeAnimationId) cancelAnimationFrame(volumeAnimationId);
-  volumeAnimationId = null;
-
-  if (audioContext) {
-    audioContext.close();
-    audioContext = null;
-  }
+  if (audioContext) audioContext.close();
 }
 
 /* ---------- START RECORDING ---------- */
@@ -159,7 +161,7 @@ async function startRecording() {
   showListeningUI();
   audioChunks = [];
 
-  // Browser ASR (optional)
+  /* ---- LIVE CAPTIONING ---- */
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -168,10 +170,21 @@ async function startRecording() {
     recognition.lang = "en-US";
     recognition.interimResults = true;
     recognition.continuous = true;
+
+    recognition.onresult = event => {
+      let transcript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      captionsBox.innerText = transcript;
+    };
+
     recognition.start();
+  } else {
+    captionsBox.innerText = "Live captions not supported in this browser.";
   }
 
-  // Mic stream
+  /* ---- MIC + RECORDING ---- */
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   startVolumeMeter(stream);
 
@@ -210,12 +223,12 @@ async function stopRecording() {
         body: formData
       });
 
-      if (!response.ok) throw new Error("Backend error");
-
       const data = await response.json();
+      captionsBox.innerHTML = "<b>Final:</b> " + data.clean_text;
       playSequence(data.sequence);
     } catch (err) {
       console.error(err);
+      captionsBox.innerText = "Error processing speech.";
     } finally {
       stopUI();
     }
@@ -224,21 +237,15 @@ async function stopRecording() {
 
 /* ---------- PLAY ISL IMAGES ---------- */
 async function playSequence(sequence) {
-  if (!sequence || sequence.length === 0 || isPlaying) return;
-
+  if (!sequence || isPlaying) return;
   isPlaying = true;
-
   for (const sign of sequence) {
     img.src = `assets/${sign}.png`;
     await wait(1000);
   }
-
   isPlaying = false;
 }
 </script>
-
-
-
 
 </body>
 </html>
