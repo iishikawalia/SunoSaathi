@@ -49,10 +49,10 @@ The project focuses on audio processing, NLP-based semantic filtering, and syste
 - 🎞 Controlled temporal playback of ISL signs
 
 🧩 **Design Decisions & Tradeoffs**
-**Rule-based ISL mapping**: Chosen for interpretability and controllability in a prototype setting.
-**Whisper** (base model): Balanced transcription accuracy and inference speed.
-**Non-streaming inference**: Implemented using HTTP POST to maintain system simplicity and reliability.
-**Keyword-based translation**: Reflects early-stage sign translation systems focusing on semantic compression.
+- **Rule-based ISL mapping**: Chosen for interpretability and controllability in a prototype setting.
+- **Whisper** (base model): Balanced transcription accuracy and inference speed.
+- **Non-streaming inference**: Implemented using HTTP POST to maintain system simplicity and reliability.
+- **Keyword-based translation**: Reflects early-stage sign translation systems focusing on semantic compression.
 
 ⚠️ **Known Limitations**
 - ISL grammar is not explicitly modelled
