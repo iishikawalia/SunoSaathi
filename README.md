@@ -61,7 +61,7 @@ The project focuses on audio processing, NLP-based semantic filtering, and syste
 - Static sign images instead of pose-based animations
 - Performance degrades in noisy environments
 
-🚀 **How to Run Locally**
+🚀 **How to Run Locally**<br>
 **Backend**
 ```bash
 pip install fastapi uvicorn openai-whisper spacy
