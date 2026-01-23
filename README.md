@@ -12,8 +12,7 @@ The project focuses on audio processing, NLP-based semantic filtering, and syste
 
 [![Pipeline](pipeline.svg)](pipeline.svg)
 
-<br>
-<br>
+
 🏗 **Architecture Overview**
 **Frontend**
 - Captures live microphone input via browser APIs
@@ -26,7 +25,9 @@ The project focuses on audio processing, NLP-based semantic filtering, and syste
 - Text normalization and filler word removal
 - spaCy-based lemmatization and keyword extraction
 - Rule-based English → ISL gloss mapping
-<br><br>
+
+
+
 🛠 **Tech Stack**
 **Frontend**
 - HTML, CSS, JavaScript
@@ -38,7 +39,8 @@ The project focuses on audio processing, NLP-based semantic filtering, and syste
 - OpenAI Whisper (base model)
 - spaCy (en_core_web_sm)
 - Regex-based text preprocessing
-<br><br>
+
+
 ✨ **Key Engineering Features**
 - 🎙 Real-time audio capture and analysis
 - 📊 Audio amplitude visualization using FFT
@@ -47,20 +49,23 @@ The project focuses on audio processing, NLP-based semantic filtering, and syste
 - 🧠 Lemma-based semantic keyword extraction
 - 🤟 English-to-ISL gloss sequencing
 - 🎞 Controlled temporal playback of ISL signs
-<br><br>
+
+
 🧩 **Design Decisions & Tradeoffs**
 - **Rule-based ISL mapping**: Chosen for interpretability and controllability in a prototype setting.
 - **Whisper** (base model): Balanced transcription accuracy and inference speed.
 - **Non-streaming inference**: Implemented using HTTP POST to maintain system simplicity and reliability.
 - **Keyword-based translation**: Reflects early-stage sign translation systems focusing on semantic compression.
-<br><br>
+
+
 ⚠️ **Known Limitations**
 - ISL grammar is not explicitly modelled
 - A very limited sign vocabulary defined manually, with synthetically generated png images using Gemini Banana Pro
 - No continuous streaming transcription
 - Static sign images instead of pose-based animations
 - Performance degrades in noisy environments
-<br><br>
+
+
 🚀 **How to Run Locally**<br>
 **Backend**
 ```bash
@@ -72,13 +77,15 @@ uvicorn main:app --reload
 - Open index.html in a browser
 - Allow microphone access
 - Click Start, speak, then Stop
-<br><br>
+
+
 🔮 **Future Improvements**
 - Grammar-aware ISL translation
 - Larger and dynamic ISL vocabulary
 - Streaming transcription using WebSockets
 - Pose-based sign animation
 - Noise-robust audio preprocessing
-<br><br>
+
+
 👩‍💻 **Author**
 Ishika Walia
