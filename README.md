@@ -7,3 +7,6 @@ The project focuses on audio processing, NLP-based semantic filtering, and syste
 - Handles real-time audio, NLP, and backend inference
 - Shows engineering tradeoffs and limitations clearly
 - Built around a real-world accessibility problem
+  
+🧠 **Pipeline**
+[![Pipeline](pipeline.svg)](pipeline.svg)
