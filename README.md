@@ -9,4 +9,5 @@ The project focuses on audio processing, NLP-based semantic filtering, and syste
 - Built around a real-world accessibility problem
   
 🧠 **Pipeline**
+
 [![Pipeline](pipeline.svg)](pipeline.svg)
