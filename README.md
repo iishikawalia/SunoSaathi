@@ -39,7 +39,7 @@ The project focuses on audio processing, NLP-based semantic filtering, and syste
 - spaCy (en_core_web_sm)
 - Regex-based text preprocessing
 
-✨**Key Engineering Features**
+✨ **Key Engineering Features**
 - 🎙 Real-time audio capture and analysis
 - 📊 Audio amplitude visualization using FFT
 - 📝 Live interim speech captions
