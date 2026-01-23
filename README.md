@@ -12,6 +12,7 @@ The project focuses on audio processing, NLP-based semantic filtering, and syste
 
 [![Pipeline](pipeline.svg)](pipeline.svg)
 
+
 🏗 **Architecture Overview**
 **Frontend**
 - Captures live microphone input via browser APIs
@@ -26,7 +27,7 @@ The project focuses on audio processing, NLP-based semantic filtering, and syste
 - spaCy-based lemmatization and keyword extraction
 - Rule-based English → ISL gloss mapping
 
-  🛠 **Tech Stack**
+🛠 **Tech Stack**
 **Frontend**
 - HTML, CSS, JavaScript
 - Web Audio API
@@ -39,13 +40,13 @@ The project focuses on audio processing, NLP-based semantic filtering, and syste
 - Regex-based text preprocessing
 
 **Key Engineering Features**
-🎙 Real-time audio capture and analysis
-📊 Audio amplitude visualization using FFT
-📝 Live interim speech captions
-🧹 Linguistic normalization and filler-word removal
-🧠 Lemma-based semantic keyword extraction
-🤟 English-to-ISL gloss sequencing
-🎞 Controlled temporal playback of ISL signs
+- 🎙 Real-time audio capture and analysis
+- 📊 Audio amplitude visualization using FFT
+- 📝 Live interim speech captions
+- 🧹 Linguistic normalization and filler-word removal
+- 🧠 Lemma-based semantic keyword extraction
+- 🤟 English-to-ISL gloss sequencing
+- 🎞 Controlled temporal playback of ISL signs
 
 🧩 **Design Decisions & Tradeoffs**
 **Rule-based ISL mapping**: Chosen for interpretability and controllability in a prototype setting.
@@ -71,3 +72,13 @@ uvicorn main:app --reload
 - Open index.html in a browser
 - Allow microphone access
 - Click Start, speak, then Stop
+
+🔮 **Future Improvements**
+- Grammar-aware ISL translation
+- Larger and dynamic ISL vocabulary
+- Streaming transcription using WebSockets
+- Pose-based sign animation
+- Noise-robust audio preprocessing
+
+👩‍💻 **Author**
+Ishika Walia
